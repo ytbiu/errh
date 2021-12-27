@@ -9,12 +9,37 @@ import (
 type ErrHandler struct {
 	err                error
 	defaultErrWrappers []func(err error) error
-	matched            bool
+	matched     bool
+	onErr func(error)
 }
 
-func New(defaultErrWrappers ...func(err error) error) ErrHandler {
-	return ErrHandler{
-		defaultErrWrappers: defaultErrWrappers,
+type Option struct {
+	defaultErrWrappers []func(err error) error
+	onErr func(error)
+}
+
+type SetOpt func(opt *Option)
+
+func WithErrWrappers(defaultErrWrappers ...func(err error) error) SetOpt {
+	return func(opt *Option) {
+		opt.defaultErrWrappers = defaultErrWrappers
+	}
+}
+
+func WithOnErr(onErr func(error)) SetOpt {
+	return func(opt *Option) {
+		opt.onErr = onErr
+	}
+}
+
+func New(setOpts ...SetOpt) ErrHandler {
+	opt := Option{}
+	for _, setOpt := range setOpts {
+		setOpt(&opt)
+	}
+	return  ErrHandler{
+		defaultErrWrappers: opt.defaultErrWrappers,
+		onErr: opt.onErr,
 	}
 }
 
